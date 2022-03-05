@@ -1,0 +1,13 @@
+name: appProject2Update
+title: appProject2Update
+username:
+account: smulle7
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5760049
+bundleId: 5644327
+url: https://smulle7.shinyapps.io/appProject2Update/
+when: 1646434386.81011
+lastSyncTime: 1646434386.81011
+asMultiple: FALSE
+asStatic: FALSE

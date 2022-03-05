@@ -59,37 +59,105 @@ Providence,41.8236,-71.4222,177994
 "))
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+# ui <-
+  # fluidPage(
+  # 
+  #   # Application title
+  #   titlePanel("Old Faithful Geyser Data"),
+  # 
+  #   # Sidebar with a slider input for number of bins 
+  #   sidebarLayout(
+  #       sidebarPanel(
+  #           sliderInput("bins",
+  #                       "Number of bins:",
+  #                       min = 1,
+  #                       max = 50,
+  #                       value = 30)
+  #       ),
+  # 
+  #       # Show a plot of the generated distribution
+  #       mainPanel(
+  #          plotOutput("distPlot"),
+  #          leafletOutput("mymap")
+  #       )
+  #   )
+    
+    
+    ui <- dashboardPage(
+      dashboardHeader(),
+      dashboardSidebar(
+        sidebarMenu(
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
+        selectInput("Year1", h3("Select Year"), 
+                    choices = list("2001" = 2001,
+                                   "2002"= 2002,
+                                   "2003" = 2003,
+                                   "2004" = 2004,
+                                   "2005" = 2005,
+                                   "2006" = 2006,
+                                   "2007" = 2007,
+                                   "2008" = 2008,
+                                   "2009"= 2009,
+                                   "2010" = 2010,
+                                   "2011" = 2011,
+                                   "2012" = 2012,
+                                   "2013"= 2013,
+                                   "2014" = 2014,
+                                   "2015" = 2015,
+                                   "2016" = 2016,
+                                   "2017" = 2017,
+                                   "2018" = 2018,
+                                   "2019" = 2019,
+                                   "2020" = 2020,
+                                   "2021" = 2021), selected = 2021),
+        dateInput('date',
+                  label = 'Date input: yyyy-mm-dd',
+                  value = "2021-08-23"
         ),
-
-        # Show a plot of the generated distribution
+        selectInput("mapTheme", h3("Map Theme"), 
+                    choices = list("Default" = 1,
+                                   "Dark" = 2,
+                                   "GeoWorld" = 3), selected = 1),
+        # actionButton("reset", "Reset Map"),
+        selectInput("resetSelect", h3("Reset Select"),
+                    choices = list("Default" = 1,
+                                   "Reset" = 2), selected = 1)
+      ),
+      dashboardBody(
         mainPanel(
-           plotOutput("distPlot"),
-           leafletOutput("mymap")
+          verbatimTextOutput("dateText"),
+          plotOutput("distPlot"),
+          leafletOutput("mymap", height=500, width=300)
         )
+      )
     )
     
     
-)
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
+  justReactiveDateSelection <- reactive({
+    defaultDate = input$date
+    # print(nameOfPlace)
+     subset(newtable, newtable$lubridateDate == defaultDate)
+  })  
+  
+
     output$distPlot <- renderPlot({
+      bar1 <- justReactiveDateSelection()
         # generate bins based on input$bins from ui.R
-      ggplot(sortedAug, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title="Entries in CTA for August 23, 2021")+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+      ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", input$date))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
     })
     output$mymap <- renderLeaflet({
       leaflet(sortedAug) %>% addTiles() %>%
@@ -97,8 +165,65 @@ server <- function(input, output) {
         #            radius = ~sqrt(rides) * 30, 
         #            popup = ~stationname
         # )
-        addMarkers(~Lon, ~Lat, popup = ~as.character(rides), label = ~as.character(stationname))
+        addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname)) %>%
+         addProviderTiles(providers$Stamen.Toner)
     })
+    
+    
+    output$mymap <- renderLeaflet({
+      sortedReactive <- justReactiveDateSelection()
+      sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
+      x = str_split(sortedReactive$Location[1], ",", n = 2)
+      sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
+      sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
+      sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
+      #newYears <-  justOneYearReactive()
+      if(input$resetSelect == 2) {
+        leaflet(sortedReactive) %>% addTiles() %>%
+          # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+          #            radius = ~sqrt(rides) * 30,
+          #            popup = ~stationname
+          # )
+          addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname))
+      } else {
+      if(input$mapTheme == 1) {
+        leaflet(sortedReactive) %>% addTiles() %>%
+          # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+          #            radius = ~sqrt(rides) * 30, 
+          #            popup = ~stationname
+          # )
+          addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname))
+        # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
+      } else if(input$mapTheme == 2) {
+        leaflet(sortedReactive) %>% addTiles() %>%
+          # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+          #            radius = ~sqrt(rides) * 30, 
+          #            popup = ~stationname
+          # )
+          addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname)) %>%
+          addProviderTiles(providers$Stamen.Toner)
+      } else {
+        leaflet(sortedReactive) %>% addTiles() %>%
+          # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+          #            radius = ~sqrt(rides) * 30, 
+          #            popup = ~stationname
+          # )
+          addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname)) %>%
+          addProviderTiles(providers$Esri.NatGeoWorldMap)
+      }
+      }
+    })
+    
+    output$dateText  <- renderText({
+      paste("input$date is", as.character(input$date))
+    })
+    
+    # observeEvent(input$reset,{
+    #   renderLeaflet(leaflet() %>% addTiles() %>% setView(41.8781, 87.6298, zoom = 17))
+    # })
+    
+    # output$myMap = renderLeaflet(leaflet() %>% addTiles() %>% setView(41.8781, 87.6298, zoom = 17))
+    
 }
 
 # Run the application 
