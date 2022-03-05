@@ -23,6 +23,7 @@ library(sp)
 library(stringr)
 library(plyr)
 library(dplyr)
+library(DT)
 
 require(scales)
 options(scipen=10000)
@@ -36,6 +37,7 @@ allDataLL3 <- do.call(rbind, allDataLL)
 allDataLL3Unique <- distinct(allDataLL3,MAP_ID, .keep_all= TRUE)
 newtable <- merge(allData3,allDataLL3Unique, by.x  = "station_id", by.y="MAP_ID") 
 newtable$lubridateDate <- mdy(newtable$date)
+newTableSortedRides <- newtable[order(newtable$rides),]  #sort by rides
 augustEntries <- subset(newtable, lubridateDate == "2021-08-23")
 sortedAug <- augustEntries[order(augustEntries$stationname),]
 
@@ -45,7 +47,7 @@ sortedAug$Lat <- as.numeric(gsub('[(]','', sortedAug$First))
 sortedAug$Lon <- as.numeric(gsub('[)]','', sortedAug$Last))
 
 #print(gsub('[(]','', sortedAug$First))
-print(sortedAug)
+#print(sortedAug)
 
 
 cities <- read.csv(textConnection("
@@ -98,28 +100,6 @@ Providence,41.8236,-71.4222,177994
           menuItem("", tabName = "cheapBlankSpace", icon = NULL),
           menuItem("", tabName = "cheapBlankSpace", icon = NULL),
           menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
-        selectInput("Year1", h3("Select Year"), 
-                    choices = list("2001" = 2001,
-                                   "2002"= 2002,
-                                   "2003" = 2003,
-                                   "2004" = 2004,
-                                   "2005" = 2005,
-                                   "2006" = 2006,
-                                   "2007" = 2007,
-                                   "2008" = 2008,
-                                   "2009"= 2009,
-                                   "2010" = 2010,
-                                   "2011" = 2011,
-                                   "2012" = 2012,
-                                   "2013"= 2013,
-                                   "2014" = 2014,
-                                   "2015" = 2015,
-                                   "2016" = 2016,
-                                   "2017" = 2017,
-                                   "2018" = 2018,
-                                   "2019" = 2019,
-                                   "2020" = 2020,
-                                   "2021" = 2021), selected = 2021),
         dateInput('date',
                   label = 'Date input: yyyy-mm-dd',
                   value = "2021-08-23"
@@ -131,13 +111,28 @@ Providence,41.8236,-71.4222,177994
         # actionButton("reset", "Reset Map"),
         selectInput("resetSelect", h3("Reset Select"),
                     choices = list("Default" = 1,
-                                   "Reset" = 2), selected = 1)
+                                   "Reset" = 2), selected = 1),
+        selectInput("alphabetmaxmin", h3("Order of Display"), 
+                    choices = list("Alphabetical" = 1,
+                                   "Min-Max" = 2), selected = 1),
+        selectInput("barChartTableMain", h3("Map Theme"), 
+                    choices = list("Barchart" = 1,
+                                   "Table" = 2), selected = 1)
       ),
       dashboardBody(
         mainPanel(
           verbatimTextOutput("dateText"),
-          plotOutput("distPlot"),
-          leafletOutput("mymap", height=500, width=300)
+          # conditionalPanel(
+          #   condition = "input.barChartTableMain == '1'",
+          #   plotOutput("distPlot")
+          # )
+          # , conditionalPanel(
+          #   condition = "input.barChartTableMain == '2'",
+          #   DTOutput("tbBarchart")
+          # ),
+           plotOutput("distPlot"),
+          leafletOutput("mymap", height=500, width=300),
+          DTOutput("tbBarchart")
         )
       )
     )
@@ -151,22 +146,50 @@ server <- function(input, output) {
     defaultDate = input$date
     # print(nameOfPlace)
      subset(newtable, newtable$lubridateDate == defaultDate)
-  })  
+  })
+  
+  # justReactiveDateSelectionSortedOrder <- reactive({
+  #   defaultDate = input$date
+  #   # print(nameOfPlace)
+  #   subset(newTableSortedRides, newTableSortedRides$lubridateDate == defaultDate)
+  # })  
   
 
     output$distPlot <- renderPlot({
       bar1 <- justReactiveDateSelection()
+      if(input$alphabetmaxmin == 1) {
+        
+        # bar1 <- bar1[order(bar1$stationname),]
+        ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", input$date))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+      } else{
+        # bar1 <- justReactiveDateSelectionSortedOrder()
+        # bar1 <- bar1[order(bar1$rides),]
+        # print(bar1)
+        ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", input$date))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+      }
         # generate bins based on input$bins from ui.R
-      ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", input$date))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+      
     })
-    output$mymap <- renderLeaflet({
-      leaflet(sortedAug) %>% addTiles() %>%
-        # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
-        #            radius = ~sqrt(rides) * 30, 
-        #            popup = ~stationname
-        # )
-        addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname)) %>%
-         addProviderTiles(providers$Stamen.Toner)
+    
+    # output$mymap <- renderLeaflet({
+    #   leaflet(sortedAug) %>% addTiles() %>%
+    #     # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+    #     #            radius = ~sqrt(rides) * 30, 
+    #     #            popup = ~stationname
+    #     # )
+    #     addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname)) %>%
+    #      addProviderTiles(providers$Stamen.Toner)
+    # })
+    
+    output$tbBarchart = renderDT({
+      bar1 <- justReactiveDateSelection()
+      dfbar <- data.frame(
+        stationname = bar1$stationname,
+        rides = bar1$rides
+      )
+      #print(dfbar)
+      dfbar <- dfbar[order(dfbar$stationname),]
+      datatable(dfbar,options  = list(lengthMenu = c(7,7)), rownames= FALSE)
     })
     
     
@@ -184,7 +207,7 @@ server <- function(input, output) {
           #            radius = ~sqrt(rides) * 30,
           #            popup = ~stationname
           # )
-          addMarkers(~Lon, ~Lat, popup = ~as.character(rides),label = ~as.character(stationname))
+          addMarkers(~Lon, ~Lat, id=1, popup = ~as.character(rides),label = ~as.character(stationname))
       } else {
       if(input$mapTheme == 1) {
         leaflet(sortedReactive) %>% addTiles() %>%
@@ -214,8 +237,20 @@ server <- function(input, output) {
       }
     })
     
+    
     output$dateText  <- renderText({
-      paste("input$date is", as.character(input$date))
+      paste("Date is", as.character(input$date), "and is a", weekdays(input$date))
+    })
+    
+    
+    observe({
+      click1 <- input$mymap_marker_click
+      if(is.null(click1))
+        return()
+      print(click1)
+      # dataTableProxy("table01") %>%
+      #   selectRows(which(qSub()$id == clickId)) %>%
+      #   selectPage(which(input$table01_rows_all == clickId) %/% input$table01_state$length + 1)
     })
     
     # observeEvent(input$reset,{
