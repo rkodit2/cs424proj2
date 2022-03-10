@@ -175,14 +175,30 @@ Providence,41.8236,-71.4222,177994
          # DTOutput("tbBarchart")
             # plotOutput("hist2")
         fluidRow(
-          column(6,
+          column(8,
                  fluidRow(
                    plotOutput("distPlot", height=400)
                  ),
+                 # fluidRow(
+                 #   column(6,
+                 #          h2("Map"),
+                 #   ),
+                 #   column(6,
+                 #          h2("Total CTA Entries"),
+                 #   )
+                 # ),
                  fluidRow(
-                   leafletOutput("mymap", height=400)
-                 )),
-          column(3,
+                   column(6,
+                   leafletOutput("mymap", height=500)
+                   ),
+                   column(6,
+                          box(title = "Total CTA Entries for all stations", solidHeader = TRUE, status = "primary", width = 12,
+                            DTOutput("tbBarchart", height = 400) 
+                      )
+                   )
+                 )
+           ),
+          column(2,
                  fluidRow(
                    box(title = "Entries from 2001-2021 for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
@@ -208,7 +224,7 @@ Providence,41.8236,-71.4222,177994
                    )
                  ),
           ),
-          column(3,
+          column(2,
                  fluidRow(
                    box(title = "Entries for Weekdays for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
@@ -367,7 +383,7 @@ server <- function(input, output) {
       )
       #print(dfbar)
       dfbar <- dfbar[order(dfbar$stationname),]
-      datatable(dfbar,options  = list(lengthMenu = c(7,7)), rownames= FALSE)
+      datatable(dfbar,options  = list(lengthMenu = c(10,10)), rownames= FALSE)
     })
     
     
