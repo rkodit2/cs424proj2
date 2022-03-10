@@ -154,13 +154,24 @@ Providence,41.8236,-71.4222,177994
         dateInput('date',
                   label = 'Date input: yyyy-mm-dd',
                   value = "2021-08-23"
-        )
+        ),
+        dateInput('date1',
+                  label = 'Date input: for date 1',
+                  value = Sys.Date()
+        ),
+        dateInput('date2',
+                  label = 'Date input: for date 2',
+                  value = Sys.Date()
+        ),
+        selectInput("whichcharttoshow", h3("Comparison"), 
+                    choices = list("Total Entries" = 1,
+                                   "Comparison" = 2), selected = 1)
         
       ),
       dashboardBody(
         conditionalPanel(
           condition = "input.page1 == 'Home'",
-        mainPanel(
+        # mainPanel(
           verbatimTextOutput("dateText"),
           # conditionalPanel(
           #   condition = "input.barChartTableMain == '1'",
@@ -177,7 +188,15 @@ Providence,41.8236,-71.4222,177994
         fluidRow(
           column(8,
                  fluidRow(
-                   plotOutput("distPlot", height=400)
+                   # conditionalPanel(
+                   #   condition = "input.chart1 == '1'",
+                   #   plotOutput("hist2", height = 400)
+                   # )
+                   # , conditionalPanel(
+                   #   condition = "input.chart1 == '2'",
+                   #   DTOutput("tb2", height = 400)
+                   # )
+                   plotOutput("distPlot",height=700)
                  ),
                  # fluidRow(
                  #   column(6,
@@ -189,11 +208,11 @@ Providence,41.8236,-71.4222,177994
                  # ),
                  fluidRow(
                    column(6,
-                   leafletOutput("mymap", height=500)
+                   leafletOutput("mymap", height=700)
                    ),
                    column(6,
                           box(title = "Total CTA Entries for all stations", solidHeader = TRUE, status = "primary", width = 12,
-                            DTOutput("tbBarchart", height = 400) 
+                            DTOutput("tbBarchart", height=600) 
                       )
                    )
                  )
@@ -203,11 +222,11 @@ Providence,41.8236,-71.4222,177994
                    box(title = "Entries from 2001-2021 for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
-                         plotOutput("hist1", height=400)
+                         plotOutput("hist1", height=600)
                        )
                        , conditionalPanel(
                          condition = "input.chart1 == '2'",
-                         DTOutput("tb1", height=400)
+                         DTOutput("tb1", height=600)
                        )
                    )
                  ),
@@ -215,11 +234,11 @@ Providence,41.8236,-71.4222,177994
                    box(title = "Entries for Months for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
-                         plotOutput("hist2", height = 400)
+                         plotOutput("hist2", height=600)
                        )
                        , conditionalPanel(
                          condition = "input.chart1 == '2'",
-                         DTOutput("tb2", height = 400)
+                         DTOutput("tb2", height=600)
                        )
                    )
                  ),
@@ -229,11 +248,11 @@ Providence,41.8236,-71.4222,177994
                    box(title = "Entries for Weekdays for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
-                         plotOutput("hist3", height = 400)
+                         plotOutput("hist3", height=600)
                        )
                        , conditionalPanel(
                          condition = "input.chart1 == '2'",
-                         DTOutput("tb3", height = 400)
+                         DTOutput("tb3", height=600)
                        )
                    )
                  ),
@@ -241,17 +260,17 @@ Providence,41.8236,-71.4222,177994
                    box(title = "Entries throughout an Year for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
-                         plotOutput("hist4", height = 400)
+                         plotOutput("hist4", height=600)
                        )
                        , conditionalPanel(
                          condition = "input.chart1 == '2'",
-                         DTOutput("tb4", height = 400)
+                         DTOutput("tb4", height=600)
                        )
                    )
                  ),
           ),
         ),
-        )
+        # )
       ),
       conditionalPanel(
         condition = "input.page1 == 'About Page'",
@@ -383,7 +402,7 @@ server <- function(input, output) {
       )
       #print(dfbar)
       dfbar <- dfbar[order(dfbar$stationname),]
-      datatable(dfbar,options  = list(lengthMenu = c(10,10)), rownames= FALSE)
+      datatable(dfbar,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
     })
     
     
@@ -539,7 +558,7 @@ server <- function(input, output) {
         #print(df1[m,2])
         m3=m3+1
       }
-      datatable(df3,options  = list(lengthMenu = c(7,7)))
+      datatable(df3,options  = list(lengthMenu = c(13,13)))
       #df3 options  = list(lengthMenu = c(6,6))
     })
     
@@ -584,7 +603,7 @@ server <- function(input, output) {
         m4=m4+1
       }
       #df4 
-      datatable(df4,options  = list(lengthMenu = c(7,7)))
+      datatable(df4,options  = list(lengthMenu = c(13,13)))
       
     })
     
@@ -604,7 +623,7 @@ server <- function(input, output) {
         Day = ny1$lubridateDate,
         Entries = ny1$rides
       )
-      datatable(df4,options  = list(lengthMenu = c(7,7)))
+      datatable(df4,options  = list(lengthMenu = c(13,13)))
       
       
     })
@@ -619,7 +638,7 @@ server <- function(input, output) {
     
     output$tb1 = renderDT({
       ny1 <- justOneYearReactive2()
-      datatable(ny1,options  = list(lengthMenu = c(7,7)))
+      datatable(ny1,options  = list(lengthMenu = c(13,13)))
       # ny1,  options  = list(lengthMenu = c(7,7))
     })
     
@@ -725,7 +744,7 @@ server <- function(input, output) {
           #print(df1[m,2])
           m3=m3+1
         }
-        datatable(df3,options  = list(lengthMenu = c(7,7)))
+        datatable(df3,options  = list(lengthMenu = c(13,13)))
         #df3 options  = list(lengthMenu = c(6,6))
       })
       
@@ -770,7 +789,7 @@ server <- function(input, output) {
           m4=m4+1
         }
         #df4 
-        datatable(df4,options  = list(lengthMenu = c(7,7)))
+        datatable(df4,options  = list(lengthMenu = c(13,13)))
         
       })
       
@@ -790,7 +809,7 @@ server <- function(input, output) {
           Day = ny1$lubridateDate,
           Entries = ny1$rides
         )
-        datatable(df4,options  = list(lengthMenu = c(7,7)))
+        datatable(df4,options  = list(lengthMenu = c(13,13)))
         
         
       })
@@ -806,7 +825,7 @@ server <- function(input, output) {
       
       output$tb1 = renderDT({
         ny1 <- justOneYearReactive2()
-        datatable(ny1,options  = list(lengthMenu = c(7,7)))
+        datatable(ny1,options  = list(lengthMenu = c(13,13)))
         # ny1,  options  = list(lengthMenu = c(7,7))
       })
       
