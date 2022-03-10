@@ -36,21 +36,27 @@ allDataLL <- lapply(temp2, read.csv)
 allDataLL3 <- do.call(rbind, allDataLL)
 allDataLL3Unique <- distinct(allDataLL3,MAP_ID, .keep_all= TRUE)
 newtable <- merge(allData3,allDataLL3Unique, by.x  = "station_id", by.y="MAP_ID") 
-newtable$lubridateDate <- mdy(newtable$date)
-print(year(newtable$lubdridateDate))
+#newtable$lubridateDate <- mdy(newtable$date)
+#print(year(newtable$lubdridateDate))
 #newtable$year <- year(newtable$lubdridateDate)
+lubridateDate <- mdy(newtable$date)
+newtable$lubridateDate <- lubridateDate
+newtable$month <- month(lubridateDate)
+newtable$day <- day(lubridateDate)
+newtable$year <- year(lubridateDate)
 newTableSortedRides <- newtable[order(newtable$rides),]  #sort by rides
 augustEntries <- subset(newtable, lubridateDate == "2021-08-23")
 sortedAug <- augustEntries[order(augustEntries$stationname),]
 
 uniqueStationNames <- sort(unique(newtable$stationname))
-selectedStationName = "A"
 #print(head(uniqueStationNames))
 
 x = str_split(sortedAug$Location[1], ",", n = 2)
 sortedAug[c('First', 'Last')] <- str_split_fixed(sortedAug$Location, ', ', 2)
 sortedAug$Lat <- as.numeric(gsub('[(]','', sortedAug$First))
 sortedAug$Lon <- as.numeric(gsub('[)]','', sortedAug$Last))
+
+counter <- reactiveValues(countervalue = 0, counterdate = as.Date("2021-08-23"), counterfinalday = as.Date("2021-08-23"), counterprevbuttonpressed = -1)
 
 months <- month.abb
 months_no <- c(1:12)
@@ -59,6 +65,8 @@ yearList = c(2001:2021)
 weekday_list <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
 
 pages <- c("Home","StationData","About Page")
+
+stationClicked = "Austin-Forest Park"
 
 
 selectInput("page1", "Select the page", pages, selected = "Home")
@@ -123,24 +131,28 @@ Providence,41.8236,-71.4222,177994
           menuItem("", tabName = "cheapBlankSpace", icon = NULL),
           menuItem("", tabName = "cheapBlankSpace", icon = NULL),
           menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+          menuItem("", tabName = "cheapBlankSpace", icon = NULL),
           menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
-        dateInput('date',
-                  label = 'Date input: yyyy-mm-dd',
-                  value = "2021-08-23"
-        ),
-        selectInput("mapTheme", h3("Map Theme"), 
-                    choices = list("Default" = 1,
-                                   "Dark" = 2,
-                                   "GeoWorld" = 3), selected = 1),
+        # selectInput("mapTheme", h3("Map Theme"), 
+        #             choices = list("Default" = 1,
+        #                            "Dark" = 2,
+        #                            "GeoWorld" = 3), selected = 1),
         # actionButton("reset", "Reset Map"),
         actionButton("reset_button", "Reset Map"),
         selectInput("alphabetmaxmin", h3("Order of Display"), 
                     choices = list("Alphabetical" = 1,
                                    "Min-Max" = 2), selected = 1),
-        selectInput("barChartTableMain", h3("Map Theme"), 
+        selectInput("chart1", h3("Bar/Table Theme"), 
                     choices = list("Barchart" = 1,
                                    "Table" = 2), selected = 1),
-        selectInput("page1", "Select the page", pages, selected = "Home")
+        selectInput("page1", "Select the page", pages, selected = "Home"),
+        actionButton("prev_button","Previous Day"),
+        actionButton("next_button","Next Day"),
+        dateInput('date',
+                  label = 'Date input: yyyy-mm-dd',
+                  value = "2021-08-23"
+        )
         
       ),
       dashboardBody(
@@ -156,95 +168,18 @@ Providence,41.8236,-71.4222,177994
           #   condition = "input.barChartTableMain == '2'",
           #   DTOutput("tbBarchart")
           # ),
-           plotOutput("distPlot"),
-          leafletOutput("mymap", height=500, width=300),
-          DTOutput("tbBarchart")
-        )
-      ),
-      conditionalPanel(
-        condition = "input.page1 == 'StationData'",
-        
-        fluidRow(
-          column(12,
-                 h1("CTA Entries comparison between Stations from 2001-2021"),
-          )
-        ),
+          # plotOutput("distPlot"),
+          #leafletOutput("mymap", height=500, width=300),
+         # DTOutput("tbBarchart")
+            # plotOutput("hist2")
         fluidRow(
           column(6,
-                 h2("Station 1"),
-          ),
-          column(6,
-                 h2("Station 2"),
-          )
-        ),
-        fluidRow(
-          column(2,
-                 selectInput("chart1", h3("Select Chart type"), 
-                             choices = list("Bar chart" = 1, "Table" = 2), selected = 1)
-          ),
-          column(2,
-                 selectInput("Year1", h3("Select Year"), 
-                             choices = list("2001" = 2001,
-                                            "2002"= 2002,
-                                            "2003" = 2003,
-                                            "2004" = 2004,
-                                            "2005" = 2005,
-                                            "2006" = 2006,
-                                            "2007" = 2007,
-                                            "2008" = 2008,
-                                            "2009"= 2009,
-                                            "2010" = 2010,
-                                            "2011" = 2011,
-                                            "2012" = 2012,
-                                            "2013"= 2013,
-                                            "2014" = 2014,
-                                            "2015" = 2015,
-                                            "2016" = 2016,
-                                            "2017" = 2017,
-                                            "2018" = 2018,
-                                            "2019" = 2019,
-                                            "2020" = 2020,
-                                            "2021" = 2021), selected = 2021)
-          ),
-          column(2,
-                 selectInput("select1", h3("Select Station 1"), 
-                             choices = uniqueStationNames, selected = 2)
-          ),
-          column(2,
-                 selectInput("chart2", h3("Select Chart type"), 
-                             choices = list("Bar chart" = 1, "Table" = 2), selected = 1)
-          ),
-          column(2,
-                 selectInput("Year2", h3("Select Year"),
-                             choices = list("2001" = 2001, 
-                                            "2002"= 2002,
-                                            "2003" = 2003,
-                                            "2004" = 2004,
-                                            "2005" = 2005,
-                                            "2006" = 2006,
-                                            "2007" = 2007,
-                                            "2008" = 2008,
-                                            "2009"= 2009,
-                                            "2010" = 2010,
-                                            "2011" = 2011,
-                                            "2012" = 2012,
-                                            "2013"= 2013,
-                                            "2014" = 2014,
-                                            "2015" = 2015,
-                                            "2016" = 2016,
-                                            "2017" = 2017,
-                                            "2018" = 2018,
-                                            "2019" = 2019,
-                                            "2020" = 2020,
-                                            "2021" = 2021), selected = 2021)
-          ),
-          column(2,
-                 selectInput("select2", h3("Select Station 2"),
-                             choices = list("UIC-Halsted" = 1, "O'hare Airport" = 2,
-                                            "Dempster" = 3), selected = 2)
-          ),
-        ),
-        fluidRow(
+                 fluidRow(
+                   plotOutput("distPlot", height=400)
+                 ),
+                 fluidRow(
+                   leafletOutput("mymap", height=400)
+                 )),
           column(3,
                  fluidRow(
                    box(title = "Entries from 2001-2021 for Station 1", solidHeader = TRUE, status = "primary", width = 12,
@@ -297,59 +232,8 @@ Providence,41.8236,-71.4222,177994
                    )
                  ),
           ),
-          column(3,
-                 fluidRow(
-                   box(title = "Entries from 2001-2021 for Station 2", solidHeader = TRUE, status = "danger", width = 12,
-                       conditionalPanel(
-                         condition = "input.chart2 == '1'",
-                         plotOutput("hist5", height=400)
-                       )
-                       , conditionalPanel(
-                         condition = "input.chart2 == '2'",
-                         DTOutput("tb5", height=400)
-                       )
-                   )
-                 ),
-                 fluidRow(
-                   box(title = "Entries for Months for Station 2", solidHeader = TRUE, status = "danger", width = 12,
-                       conditionalPanel(
-                         condition = "input.chart2 == '1'",
-                         plotOutput("hist6", height=400)
-                       )
-                       , conditionalPanel(
-                         condition = "input.chart2 == '2'",
-                         DTOutput("tb6", height=400)
-                       )
-                   )
-                 ),
-          ),
-          column(3,
-                 fluidRow(
-                   box(title = "Entries for Weekdays for Station 2", solidHeader = TRUE, status = "danger", width = 12,
-                       conditionalPanel(
-                         condition = "input.chart2 == '1'",
-                         plotOutput("hist7", height=400)
-                       )
-                       , conditionalPanel(
-                         condition = "input.chart2 == '2'",
-                         DTOutput("tb7", height=400)
-                       )
-                   )
-                 ),
-                 fluidRow(
-                   box(title = "Entries throughout an Year for Station 2", solidHeader = TRUE, status = "danger", width = 12,
-                       conditionalPanel(
-                         condition = "input.chart2 == '1'",
-                         plotOutput("hist8", height=400)
-                       )
-                       , conditionalPanel(
-                         condition = "input.chart2 == '2'",
-                         DTOutput("tb8", height=400)
-                       )
-                   )
-                 ),
-          ),
         ),
+        )
       ),
       conditionalPanel(
         condition = "input.page1 == 'About Page'",
@@ -379,18 +263,85 @@ server <- function(input, output) {
   #   subset(newTableSortedRides, newTableSortedRides$lubridateDate == defaultDate)
   # })  
   
+  justReactivePrevDay <- reactive({
+    defaultDate = input$date - days(counter$countervalue)
+    # print(nameOfPlace)
+    subset(newtable, newtable$lubridateDate == defaultDate)
+  })
+  
+  observeEvent(
+    input$prev_button,{
+      if(counter$counterprevbuttonpressed == 0) {
+        counter$countervalue <- 1
+        counter$counterdate <- input$date
+        counter$counterfinalday <- counter$counterdate - days(counter$countervalue)
+      } else {
+      counter$countervalue <- counter$countervalue + 1
+      counter$counterdate <- input$date
+      counter$counterfinalday <- counter$counterdate - days(counter$countervalue)
+      }
+      # counter$counterdate <- input$date
+      counter$counterprevbuttonpressed = 1
+      
+      
+
+       print(counter$counterdate - days(counter$countervalue))
+       print(paste("Input value prec", input$date))
+      # output$dateText  <- renderText({
+      #   paste("Date is", as.character(input$date - days(counter$countervalue)), "and is a", weekdays(input$date - days(counter$countervalue)))
+      # })
+
+    })
+  
+  observeEvent(
+    input$next_button,{
+      if(counter$counterprevbuttonpressed == 1) {
+        counter$countervalue <- 1
+        counter$counterdate <- input$date
+        counter$counterfinalday <- counter$counterdate + days(counter$countervalue)
+      } else {
+      counter$countervalue <- counter$countervalue + 1
+      counter$counterfinalday <- counter$counterdate + days(counter$countervalue)
+      counter$counterdate <- input$date
+      }
+      counter$counterprevbuttonpressed == 0
+
+      
+      
+      
+      print(counter$counterdate + days(counter$countervalue))
+      print(paste("Input value next", input$date))
+      # output$dateText  <- renderText({
+      #   paste("Date is", as.character(input$date - days(counter$countervalue)), "and is a", weekdays(input$date - days(counter$countervalue)))
+      # })
+      
+    })
+  
+  observeEvent(
+    input$date,{
+      counter$countervalue <- 0
+      counter$counterdate <- input$date
+      counter$counterfinalday <- input$date
+      # print(counter$counterdate - days(counter$countervalue))
+      # print(paste("Input value", input$date))
+      # output$dateText  <- renderText({
+      #   paste("Date is", as.character(input$date - days(counter$countervalue)), "and is a", weekdays(input$date - days(counter$countervalue)))
+      # })
+      
+    })
+  
 
     output$distPlot <- renderPlot({
-      bar1 <- justReactiveDateSelection()
+      bar1 <- subset(newtable, newtable$lubridateDate == counter$counterfinalday)
       if(input$alphabetmaxmin == 1) {
         
         # bar1 <- bar1[order(bar1$stationname),]
-        ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", input$date))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
       } else{
         # bar1 <- justReactiveDateSelectionSortedOrder()
         # bar1 <- bar1[order(bar1$rides),]
         # print(bar1)
-        ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", input$date))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
       }
         # generate bins based on input$bins from ui.R
       
@@ -418,40 +369,41 @@ server <- function(input, output) {
     })
     
     
-    output$mymap <- renderLeaflet({
-      sortedReactive <- justReactiveDateSelection()
-      sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
-      x = str_split(sortedReactive$Location[1], ",", n = 2)
-      sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
-      sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
-      sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
-      #newYears <-  justOneYearReactive()
-      if(input$mapTheme == 1) {
-        leaflet(sortedReactive) %>% addTiles() %>%
-          # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
-          #            radius = ~sqrt(rides) * 30, 
-          #            popup = ~stationname
-          # )
-          addMarkers(~Lon, ~Lat, popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
-        # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
-      } else if(input$mapTheme == 2) {
-        leaflet(sortedReactive) %>% addTiles() %>%
-          # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
-          #            radius = ~sqrt(rides) * 30, 
-          #            popup = ~stationname
-          # )
-          addMarkers(~Lon, ~Lat, popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname)) %>%
-          addProviderTiles(providers$Stamen.Toner)
-      } else {
-        leaflet(sortedReactive) %>% addTiles() %>%
-          # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
-          #            radius = ~sqrt(rides) * 30, 
-          #            popup = ~stationname
-          # )
-          addMarkers(~Lon, ~Lat, popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname)) %>%
-          addProviderTiles(providers$Esri.NatGeoWorldMap)
-      }
-    })
+    # output$mymap <- renderLeaflet({
+    #   sortedReactive <- justReactiveDateSelection()
+    #   sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
+    #   x = str_split(sortedReactive$Location[1], ",", n = 2)
+    #   sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
+    #   sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
+    #   sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
+    #   #newYears <-  justOneYearReactive()
+    #   if(input$mapTheme == 1) {
+    #     leaflet(sortedReactive) %>% addTiles() %>%
+    #       setView(lng = 144, lat = -37, zoom = 3) %>%
+    #       # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+    #       #            radius = ~sqrt(rides) * 30, 
+    #       #            popup = ~stationname
+    #       # )
+    #       addMarkers(~Lon, ~Lat, popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
+    #     # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
+    #   } else if(input$mapTheme == 2) {
+    #     leaflet(sortedReactive) %>% addTiles() %>%
+    #       # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+    #       #            radius = ~sqrt(rides) * 30, 
+    #       #            popup = ~stationname
+    #       # )
+    #       addMarkers(~Lon, ~Lat, popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname)) %>%
+    #       addProviderTiles(providers$Stamen.Toner)
+    #   } else {
+    #     leaflet(sortedReactive) %>% addTiles() %>%
+    #       # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
+    #       #            radius = ~sqrt(rides) * 30, 
+    #       #            popup = ~stationname
+    #       # )
+    #       addMarkers(~Lon, ~Lat, popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname)) %>%
+    #       addProviderTiles(providers$Esri.NatGeoWorldMap)
+    #   }
+    # })
     
     observe({
       input$reset_button
@@ -463,46 +415,80 @@ server <- function(input, output) {
         sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
         sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
         #newYears <-  justOneYearReactive()
-          if(input$mapTheme == 1) {
             leaflet(sortedReactive) %>% addTiles() %>%
+              # setView(lng = -87.6403, lat = 41.8787, zoom = 10) %>%
+              setView(lng = median(sortedReactive$Lon), lat = median(sortedReactive$Lat), zoom = 10) %>%
+              addProviderTiles("OpenStreetMap", group="bg1") %>%
+              addProviderTiles("Esri.NatGeoWorldMap", group="bg2") %>%
+              addProviderTiles("Stamen.Toner", group="bg3") %>%
+              
+              # Add the control widget
+              addLayersControl(baseGroups = c("bg1","bg2", "bg3"), 
+                               options = layersControlOptions(collapsed = FALSE)) %>%
               # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
               #            radius = ~sqrt(rides) * 30, 
               #            popup = ~stationname
               # )
               addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
             # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
-          } else if(input$mapTheme == 2) {
-            leaflet(sortedReactive) %>% addTiles() %>%
-              # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
-              #            radius = ~sqrt(rides) * 30, 
-              #            popup = ~stationname
-              # )
-              addMarkers(~Lon, ~Lat,layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname)) %>%
-              addProviderTiles(providers$Stamen.Toner)
-          } else {
-            leaflet(sortedReactive) %>% addTiles() %>%
-              # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
-              #            radius = ~sqrt(rides) * 30, 
-              #            popup = ~stationname
-              # )
-              addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname)) %>%
-              addProviderTiles(providers$Esri.NatGeoWorldMap)
-          }
       })
       
     })
+    
+
+    
     
     observe({
       click <- input$mymap_marker_click
       if (is.null(click))
         return()
       
-      print(click)
+      
+      stationClicked = click$id
+      print(stationClicked)
       text <-
         paste("Lattitude ",
               click$lat,
               "Longtitude ",
               click$lng)
+      
+      justOneYearReactive1 <- reactive({
+        #print(paste("Station name is:",stationClicked))
+        subset(newtable, newtable$year == year(input$date) & newtable$stationname == click$id)
+      })
+      
+      # output$dateText  <- renderText({
+      #   paste("Date is", as.character(input$date), "and is a", weekdays(input$date),"and station is ", click$id)
+      # })
+      
+      output$hist2 <- renderPlot({
+        ny1 <- justOneYearReactive1()
+
+
+        df3 <- data.frame(
+          Months = months,
+          Months_no = months_no,
+          Entries = c(0)
+        )
+        df3$Months <- factor(df3$Months, levels = month.abb)
+
+
+        m3 = 1
+        for(i in months_no) {
+          ny1Subset <- subset(ny1, month == i)
+          #print(ny1Subset)
+          #sum(dfUICHalsted$rides)
+          sumEntries <- sum(ny1Subset$rides)
+          #print(sumEntries)
+          df3[m3,3] = sumEntries
+          #print(df1[m,2])
+          m3=m3+1
+        }
+        titlePlot <- paste("Entries in Months for", ny1$stationname, "in", ny1$year, sep = " ")
+        ggplot(df3, aes(x=Months, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Months", title=titlePlot)+scale_y_continuous(labels=comma)
+
+
+      })
       
       # leafletProxy(mapId = "mymap") %>%
       #   clearPopups() %>%
@@ -512,11 +498,70 @@ server <- function(input, output) {
       # map$showPopup(click$latitude, click$longtitude, text)
     })
     
-
     
     output$dateText  <- renderText({
-      paste("Date is", as.character(input$date), "and is a", weekdays(input$date))
+      paste("Date is", as.character(counter$counterfinalday), "and is a", weekdays(counter$counterfinalday))
     })
+    
+    
+# 
+#     output$hist2 <- renderPlot({
+#       ny1 <- justOneYearReactive1()
+#       
+#       
+#       df3 <- data.frame(
+#         Months = months,
+#         Months_no = months_no,
+#         Entries = c(0)
+#       )
+#       df3$Months <- factor(df3$Months, levels = month.abb)
+#       
+#       
+#       m3 = 1
+#       for(i in months_no) {
+#         ny1Subset <- subset(ny1, month == i)
+#         #print(ny1Subset)
+#         #sum(dfUICHalsted$rides)
+#         sumEntries <- sum(ny1Subset$rides)
+#         #print(sumEntries)
+#         df3[m3,3] = sumEntries
+#         #print(df1[m,2])
+#         m3=m3+1
+#       }
+#       titlePlot <- paste("Entries in Months for", ny1$stationname, "in", ny1$year, sep = " ")
+#       ggplot(df3, aes(x=Months, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Months", title=titlePlot)+scale_y_continuous(labels=comma)
+#       
+#       
+#     })
+    
+    output$tb2 = renderDT({
+      ny1 <- justOneYearReactive1()
+      
+      
+      df3 <- data.frame(
+        Months = months,
+        #Months_no = months_no,
+        Entries = c(0)
+      )
+      df3$Months <- factor(df3$Months, levels = month.abb)
+      
+      
+      m3 = 1
+      for(i in months_no) {
+        ny1Subset <- subset(ny1, month == i)
+        #print(ny1Subset)
+        #sum(dfUICHalsted$rides)
+        sumEntries <- sum(ny1Subset$rides)
+        #print(sumEntries)
+        df3[m3,2] = sumEntries
+        #print(df1[m,2])
+        m3=m3+1
+      }
+      datatable(df3,options  = list(lengthMenu = c(7,7)))
+      #df3 options  = list(lengthMenu = c(6,6))
+    })
+    
+
     
     # 
     # observe({

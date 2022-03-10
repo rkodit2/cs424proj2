@@ -5,9 +5,9 @@ account: smulle7
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5760049
-bundleId: 5647237
+bundleId: 5667230
 url: https://smulle7.shinyapps.io/appProject2Update/
-when: 1646515795.83247
-lastSyncTime: 1646515795.83247
+when: 1646931473.10976
+lastSyncTime: 1646931473.10976
 asMultiple: FALSE
 asStatic: FALSE
