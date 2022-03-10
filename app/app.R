@@ -44,6 +44,8 @@ newtable$lubridateDate <- lubridateDate
 newtable$month <- month(lubridateDate)
 newtable$day <- day(lubridateDate)
 newtable$year <- year(lubridateDate)
+newtable$weekday <- weekdays(newtable$lubridateDate)
+
 newTableSortedRides <- newtable[order(newtable$rides),]  #sort by rides
 augustEntries <- subset(newtable, lubridateDate == "2021-08-23")
 sortedAug <- augustEntries[order(augustEntries$stationname),]
@@ -457,6 +459,30 @@ server <- function(input, output) {
         subset(newtable, newtable$year == year(input$date) & newtable$stationname == click$id)
       })
       
+      
+      justOneYearReactive2 <- reactive({
+        #print(paste("Station name is:",stationClicked))
+       subsetStation <- subset(newtable, newtable$stationname == click$id)
+       
+       yearList = c(2001:2021)
+       df1 <- data.frame(
+         Year = yearList,
+         Entries = c(0)
+       )
+       
+       m1 = 1
+       for(i in yearList) {
+         subsetStationsubset <- subset(subsetStation, year == i)
+         #sum(dfUICHalsted$rides)
+         sumEntries <- sum(subsetStationsubset$rides)
+         df1[m1,2] = sumEntries
+         #print(df1[m,2])
+         m1=m1+1
+       }
+       
+       df1
+      })
+      
       # output$dateText  <- renderText({
       #   paste("Date is", as.character(input$date), "and is a", weekdays(input$date),"and station is ", click$id)
       # })
@@ -488,6 +514,113 @@ server <- function(input, output) {
         ggplot(df3, aes(x=Months, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Months", title=titlePlot)+scale_y_continuous(labels=comma)
 
 
+      })
+      
+      output$tb2 = renderDT({
+        ny1 <- justOneYearReactive1()
+        
+        
+        df3 <- data.frame(
+          Months = months,
+          #Months_no = months_no,
+          Entries = c(0)
+        )
+        df3$Months <- factor(df3$Months, levels = month.abb)
+        
+        
+        m3 = 1
+        for(i in months_no) {
+          ny1Subset <- subset(ny1, month == i)
+          #print(ny1Subset)
+          #sum(dfUICHalsted$rides)
+          sumEntries <- sum(ny1Subset$rides)
+          #print(sumEntries)
+          df3[m3,2] = sumEntries
+          #print(df1[m,2])
+          m3=m3+1
+        }
+        datatable(df3,options  = list(lengthMenu = c(7,7)))
+        #df3 options  = list(lengthMenu = c(6,6))
+      })
+      
+      output$hist3 <- renderPlot({
+        #newYears <-  justOneYearReactive()
+        ny1 <- justOneYearReactive1()
+        
+        df4 <- data.frame(
+          Weekday = weekday_list,
+          Entries = c(0)
+        )
+        df4$Weekday <- factor(df4$Weekday, levels = weekday_list, labels = c("Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"))
+        m4 = 1
+        for(i in weekday_list) {
+          weekday1Subset <- subset(ny1, weekday == i)
+          #sum(dfUICHalsted$rides)
+          sumEntries <- sum(weekday1Subset$rides)
+          df4[m4,2] = sumEntries
+          m4=m4+1
+        }
+        titlePlot <- paste("Entries in Weekdays for", ny1$stationname, "in", ny1$year, sep = " ")
+        ggplot(df4, aes(x=Weekday, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Weekdays", title=titlePlot)+scale_y_continuous(labels=comma)
+        
+        #ny1 <- justOneYearReactive1()
+        # ggplot(ny1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")
+      })
+      
+      output$tb3 = renderDT({
+        ny1 <- justOneYearReactive1()
+        
+        df4 <- data.frame(
+          Weekday = weekday_list,
+          Entries = c(0)
+        )
+        df4$Weekday <- factor(df4$Weekday, levels = weekday_list, labels = c("Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"))
+        m4 = 1
+        for(i in weekday_list) {
+          weekday1Subset <- subset(ny1, weekday == i)
+          #sum(dfUICHalsted$rides)
+          sumEntries <- sum(weekday1Subset$rides)
+          df4[m4,2] = sumEntries
+          m4=m4+1
+        }
+        #df4 
+        datatable(df4,options  = list(lengthMenu = c(7,7)))
+        
+      })
+      
+      output$hist4 <- renderPlot({
+        #newYears <-  justOneYearReactive()
+        ny1 <- justOneYearReactive1()
+        
+        
+        titlePlot <- paste("Entries in throughout the year for", ny1$stationname, "in", ny1$year, sep = " ")
+        ggplot(ny1, aes(x=lubridateDate, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Throughout Year", title=titlePlot)+scale_y_continuous(labels=comma)
+      })
+      
+      output$tb4 = renderDT({
+        ny1 <- justOneYearReactive1()
+        
+        df4 <- data.frame(
+          Day = ny1$lubridateDate,
+          Entries = ny1$rides
+        )
+        datatable(df4,options  = list(lengthMenu = c(7,7)))
+        
+        
+      })
+      
+      output$hist1 <- renderPlot({
+        #newYears <-  justOneYearReactive()
+        ny1 <- justOneYearReactive2()
+        ggplot(ny1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in O'Hare Airport from 2001-2021")+scale_y_continuous(labels=comma)
+       
+        #ggplot(df2, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")
+      })
+      
+      output$tb1 = renderDT({
+        ny1 <- justOneYearReactive2()
+        datatable(ny1,options  = list(lengthMenu = c(7,7)))
+        # ny1,  options  = list(lengthMenu = c(7,7))
       })
       
       # leafletProxy(mapId = "mymap") %>%
@@ -534,32 +667,7 @@ server <- function(input, output) {
 #       
 #     })
     
-    output$tb2 = renderDT({
-      ny1 <- justOneYearReactive1()
-      
-      
-      df3 <- data.frame(
-        Months = months,
-        #Months_no = months_no,
-        Entries = c(0)
-      )
-      df3$Months <- factor(df3$Months, levels = month.abb)
-      
-      
-      m3 = 1
-      for(i in months_no) {
-        ny1Subset <- subset(ny1, month == i)
-        #print(ny1Subset)
-        #sum(dfUICHalsted$rides)
-        sumEntries <- sum(ny1Subset$rides)
-        #print(sumEntries)
-        df3[m3,2] = sumEntries
-        #print(df1[m,2])
-        m3=m3+1
-      }
-      datatable(df3,options  = list(lengthMenu = c(7,7)))
-      #df3 options  = list(lengthMenu = c(6,6))
-    })
+
     
 
     
