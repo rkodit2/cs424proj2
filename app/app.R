@@ -184,7 +184,7 @@ Providence,41.8236,-71.4222,177994
                  )),
           column(3,
                  fluidRow(
-                   box(title = "Entries from 2001-2021 for Station 1", solidHeader = TRUE, status = "primary", width = 12,
+                   box(title = "Entries from 2001-2021 for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
                          plotOutput("hist1", height=400)
@@ -196,7 +196,7 @@ Providence,41.8236,-71.4222,177994
                    )
                  ),
                  fluidRow(
-                   box(title = "Entries for Months for Station 1", solidHeader = TRUE, status = "primary", width = 12,
+                   box(title = "Entries for Months for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
                          plotOutput("hist2", height = 400)
@@ -210,7 +210,7 @@ Providence,41.8236,-71.4222,177994
           ),
           column(3,
                  fluidRow(
-                   box(title = "Entries for Weekdays for Station 1", solidHeader = TRUE, status = "primary", width = 12,
+                   box(title = "Entries for Weekdays for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
                          plotOutput("hist3", height = 400)
@@ -222,7 +222,7 @@ Providence,41.8236,-71.4222,177994
                    )
                  ),
                  fluidRow(
-                   box(title = "Entries throughout an Year for Station 1", solidHeader = TRUE, status = "primary", width = 12,
+                   box(title = "Entries throughout an Year for Station", solidHeader = TRUE, status = "primary", width = 12,
                        conditionalPanel(
                          condition = "input.chart1 == '1'",
                          plotOutput("hist4", height = 400)
@@ -437,6 +437,176 @@ server <- function(input, output) {
       
     })
     
+    
+    justOneYearReactive1 <- reactive({
+      #print(paste("Station name is:",stationClicked))
+      subset(newtable, newtable$year == year(input$date) & newtable$stationname == "UIC-Halsted")
+    })
+    
+    
+    justOneYearReactive2 <- reactive({
+      #print(paste("Station name is:",stationClicked))
+      subsetStation <- subset(newtable, newtable$stationname == "UIC-Halsted")
+      
+      yearList = c(2001:2021)
+      df1 <- data.frame(
+        Year = yearList,
+        Entries = c(0)
+      )
+      
+      m1 = 1
+      for(i in yearList) {
+        subsetStationsubset <- subset(subsetStation, year == i)
+        #sum(dfUICHalsted$rides)
+        sumEntries <- sum(subsetStationsubset$rides)
+        df1[m1,2] = sumEntries
+        #print(df1[m,2])
+        m1=m1+1
+      }
+      
+      df1
+    })
+    
+    # output$dateText  <- renderText({
+    #   paste("Date is", as.character(input$date), "and is a", weekdays(input$date),"and station is ", click$id)
+    # })
+    
+    output$hist2 <- renderPlot({
+      ny1 <- justOneYearReactive1()
+      
+      
+      df3 <- data.frame(
+        Months = months,
+        Months_no = months_no,
+        Entries = c(0)
+      )
+      df3$Months <- factor(df3$Months, levels = month.abb)
+      
+      
+      m3 = 1
+      for(i in months_no) {
+        ny1Subset <- subset(ny1, month == i)
+        #print(ny1Subset)
+        #sum(dfUICHalsted$rides)
+        sumEntries <- sum(ny1Subset$rides)
+        #print(sumEntries)
+        df3[m3,3] = sumEntries
+        #print(df1[m,2])
+        m3=m3+1
+      }
+      titlePlot <- paste("Entries in Months for", ny1$stationname, "in", ny1$year, sep = " ")
+      ggplot(df3, aes(x=Months, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Months", title=titlePlot)+scale_y_continuous(labels=comma)
+      
+      
+    })
+    
+    output$tb2 = renderDT({
+      ny1 <- justOneYearReactive1()
+      
+      
+      df3 <- data.frame(
+        Months = months,
+        #Months_no = months_no,
+        Entries = c(0)
+      )
+      df3$Months <- factor(df3$Months, levels = month.abb)
+      
+      
+      m3 = 1
+      for(i in months_no) {
+        ny1Subset <- subset(ny1, month == i)
+        #print(ny1Subset)
+        #sum(dfUICHalsted$rides)
+        sumEntries <- sum(ny1Subset$rides)
+        #print(sumEntries)
+        df3[m3,2] = sumEntries
+        #print(df1[m,2])
+        m3=m3+1
+      }
+      datatable(df3,options  = list(lengthMenu = c(7,7)))
+      #df3 options  = list(lengthMenu = c(6,6))
+    })
+    
+    output$hist3 <- renderPlot({
+      #newYears <-  justOneYearReactive()
+      ny1 <- justOneYearReactive1()
+      
+      df4 <- data.frame(
+        Weekday = weekday_list,
+        Entries = c(0)
+      )
+      df4$Weekday <- factor(df4$Weekday, levels = weekday_list, labels = c("Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"))
+      m4 = 1
+      for(i in weekday_list) {
+        weekday1Subset <- subset(ny1, weekday == i)
+        #sum(dfUICHalsted$rides)
+        sumEntries <- sum(weekday1Subset$rides)
+        df4[m4,2] = sumEntries
+        m4=m4+1
+      }
+      titlePlot <- paste("Entries in Weekdays for", ny1$stationname, "in", ny1$year, sep = " ")
+      ggplot(df4, aes(x=Weekday, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Weekdays", title=titlePlot)+scale_y_continuous(labels=comma)
+      
+      #ny1 <- justOneYearReactive1()
+      # ggplot(ny1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")
+    })
+    
+    output$tb3 = renderDT({
+      ny1 <- justOneYearReactive1()
+      
+      df4 <- data.frame(
+        Weekday = weekday_list,
+        Entries = c(0)
+      )
+      df4$Weekday <- factor(df4$Weekday, levels = weekday_list, labels = c("Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"))
+      m4 = 1
+      for(i in weekday_list) {
+        weekday1Subset <- subset(ny1, weekday == i)
+        #sum(dfUICHalsted$rides)
+        sumEntries <- sum(weekday1Subset$rides)
+        df4[m4,2] = sumEntries
+        m4=m4+1
+      }
+      #df4 
+      datatable(df4,options  = list(lengthMenu = c(7,7)))
+      
+    })
+    
+    output$hist4 <- renderPlot({
+      #newYears <-  justOneYearReactive()
+      ny1 <- justOneYearReactive1()
+      
+      
+      titlePlot <- paste("Entries in throughout the year for", ny1$stationname, "in", ny1$year, sep = " ")
+      ggplot(ny1, aes(x=lubridateDate, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Throughout Year", title=titlePlot)+scale_y_continuous(labels=comma)
+    })
+    
+    output$tb4 = renderDT({
+      ny1 <- justOneYearReactive1()
+      
+      df4 <- data.frame(
+        Day = ny1$lubridateDate,
+        Entries = ny1$rides
+      )
+      datatable(df4,options  = list(lengthMenu = c(7,7)))
+      
+      
+    })
+    
+    output$hist1 <- renderPlot({
+      #newYears <-  justOneYearReactive()
+      ny1 <- justOneYearReactive2()
+      ggplot(ny1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
+      
+      #ggplot(df2, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")
+    })
+    
+    output$tb1 = renderDT({
+      ny1 <- justOneYearReactive2()
+      datatable(ny1,options  = list(lengthMenu = c(7,7)))
+      # ny1,  options  = list(lengthMenu = c(7,7))
+    })
+    
 
     
     
@@ -612,7 +782,8 @@ server <- function(input, output) {
       output$hist1 <- renderPlot({
         #newYears <-  justOneYearReactive()
         ny1 <- justOneYearReactive2()
-        ggplot(ny1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in O'Hare Airport from 2001-2021")+scale_y_continuous(labels=comma)
+        titlePlot <- paste("Entries in", click$id, "from 2001-2021", sep = " ")
+        ggplot(ny1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title=titlePlot)+scale_y_continuous(labels=comma)
        
         #ggplot(df2, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")
       })
@@ -621,6 +792,10 @@ server <- function(input, output) {
         ny1 <- justOneYearReactive2()
         datatable(ny1,options  = list(lengthMenu = c(7,7)))
         # ny1,  options  = list(lengthMenu = c(7,7))
+      })
+      
+      output$dateText  <- renderText({
+        paste("Date is", as.character(counter$counterfinalday), "and is a", weekdays(counter$counterfinalday), "and station is" , click$id)
       })
       
       # leafletProxy(mapId = "mymap") %>%
@@ -633,7 +808,7 @@ server <- function(input, output) {
     
     
     output$dateText  <- renderText({
-      paste("Date is", as.character(counter$counterfinalday), "and is a", weekdays(counter$counterfinalday))
+      paste("Date is", as.character(counter$counterfinalday), "and is a", weekdays(counter$counterfinalday), " and default station is UIC-Halsted")
     })
     
     
