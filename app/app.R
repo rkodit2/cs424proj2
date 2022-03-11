@@ -93,6 +93,11 @@ Pittsburgh,40.4397,-79.9764,305841
 Providence,41.8236,-71.4222,177994
 "))
 
+specie <- c(rep("sorgho" , 3) , rep("poacee" , 3) , rep("banana" , 3) , rep("triticum" , 3) )
+condition <- rep(c("normal" , "stress" , "Nitrogen") , 4)
+value <- abs(rnorm(12 , 0 , 15))
+data <- data.frame(specie,condition,value)
+
 # Define UI for application that draws a histogram
 # ui <-
   # fluidPage(
@@ -157,22 +162,24 @@ Providence,41.8236,-71.4222,177994
         ),
         dateInput('date1',
                   label = 'Date input: for date 1',
-                  value = Sys.Date()
+                  value = "2021-08-23"
         ),
         dateInput('date2',
                   label = 'Date input: for date 2',
-                  value = Sys.Date()
+                  value = "2021-08-24"
         ),
-        selectInput("whichcharttoshow", h3("Comparison"), 
-                    choices = list("Total Entries" = 1,
-                                   "Comparison" = 2), selected = 1)
+        # selectInput("whichcharttoshow", h3("Comparison"), 
+        #             choices = list("Total Entries" = TRUE,
+        #                            "Comparison" = FALSE)),
+        actionButton("enter_button", "Enter"),
+        actionButton("reset_bar", "Reset Bar")
         
       ),
       dashboardBody(
         conditionalPanel(
           condition = "input.page1 == 'Home'",
         # mainPanel(
-          verbatimTextOutput("dateText"),
+          h1(textOutput("dateText")),
           # conditionalPanel(
           #   condition = "input.barChartTableMain == '1'",
           #   plotOutput("distPlot")
@@ -188,15 +195,21 @@ Providence,41.8236,-71.4222,177994
         fluidRow(
           column(8,
                  fluidRow(
+                   # box(title = "Entries from 2001-2021 for Station", solidHeader = TRUE, status = "primary", width = 12,
                    # conditionalPanel(
-                   #   condition = "input.chart1 == '1'",
-                   #   plotOutput("hist2", height = 400)
+                   #   condition = "input.whichcharttoshow == TRUE",
+                   #   plotOutput("distPlot", height = 700)
+                   # ),
+                   # conditionalPanel(
+                   #   condition = "input.whichcharttoshow == FALSE",
+                   #   plotOutput("hist1", height = 700)
                    # )
-                   # , conditionalPanel(
-                   #   condition = "input.chart1 == '2'",
-                   #   DTOutput("tb2", height = 400)
+                   # ,conditionalPanel(
+                   #   condition = "input.whichcharttoshow == '2'",
+                   #   plotOutput("distPlot", height = 700)
                    # )
-                   plotOutput("distPlot",height=700)
+                   # )
+                    plotOutput("distPlot",height=700)
                  ),
                  # fluidRow(
                  #   column(6,
@@ -306,15 +319,71 @@ server <- function(input, output) {
     subset(newtable, newtable$lubridateDate == defaultDate)
   })
   
+  # observe({
+  #   input$enter_button
+  #   output$distPlot <- renderPlot({
+  #     bar1 <- subset(newtable, newtable$lubridateDate == counter$counterfinalday)
+  #       # bar1 <- justReactiveDateSelectionSortedOrder()
+  #       # bar1 <- bar1[order(bar1$rides),]
+  #       # print(bar1)
+  #       ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+  #     # generate bins based on input$bins from ui.R
+  #     
+  #   })
+  #   
+  # })
+  
+  observeEvent(
+    input$enter_button,{
+      output$distPlot <- renderPlot({
+        
+        bar1 <- subset(newtable, newtable$lubridateDate == input$date1)
+        bar2 <- subset(newtable, newtable$lubridateDate == input$date2)
+        everything <- rbind(bar1,bar2)
+        
+        ggplot(everything, aes(fill=as.character(lubridateDate), y=rides, x=stationname)) + geom_bar(position="dodge", stat="identity")+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))+scale_fill_discrete(name = "Dates")
+      })
+      
+      output$tbBarchart <- renderDT({
+        bar1 <- justReactiveDateSelection()
+        dfbar <- data.frame(
+          stationname = bar1$stationname,
+          rides = bar1$rides
+        )
+        #print(dfbar)
+        dfbar <- dfbar[order(dfbar$stationname),]
+        datatable(dfbar,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
+      })
+      
+    })
+  
+  observeEvent(
+    input$reset_bar,{
+      output$distPlot <- renderPlot({
+        bar1 <- subset(newtable, newtable$lubridateDate == input$date)
+        if(input$alphabetmaxmin == 1) {
+          
+          # bar1 <- bar1[order(bar1$stationname),]
+          ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        } else{
+          # bar1 <- justReactiveDateSelectionSortedOrder()
+          # bar1 <- bar1[order(bar1$rides),]
+          # print(bar1)
+          ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        }
+      })
+      
+    })
+  
   observeEvent(
     input$prev_button,{
       if(counter$counterprevbuttonpressed == 0) {
         counter$countervalue <- 1
-        counter$counterdate <- input$date
+        # counter$counterdate <- input$date
         counter$counterfinalday <- counter$counterdate - days(counter$countervalue)
       } else {
       counter$countervalue <- counter$countervalue + 1
-      counter$counterdate <- input$date
+      # counter$counterdate <- input$date
       counter$counterfinalday <- counter$counterdate - days(counter$countervalue)
       }
       # counter$counterdate <- input$date
@@ -323,7 +392,7 @@ server <- function(input, output) {
       
 
        print(counter$counterdate - days(counter$countervalue))
-       print(paste("Input value prec", input$date))
+       print(paste("Input value prec", counter$counterfinalday))
       # output$dateText  <- renderText({
       #   paste("Date is", as.character(input$date - days(counter$countervalue)), "and is a", weekdays(input$date - days(counter$countervalue)))
       # })
@@ -334,12 +403,12 @@ server <- function(input, output) {
     input$next_button,{
       if(counter$counterprevbuttonpressed == 1) {
         counter$countervalue <- 1
-        counter$counterdate <- input$date
+        # counter$counterdate <- input$date
         counter$counterfinalday <- counter$counterdate + days(counter$countervalue)
       } else {
       counter$countervalue <- counter$countervalue + 1
       counter$counterfinalday <- counter$counterdate + days(counter$countervalue)
-      counter$counterdate <- input$date
+      # counter$counterdate <- input$date
       }
       counter$counterprevbuttonpressed == 0
 
@@ -347,7 +416,7 @@ server <- function(input, output) {
       
       
       print(counter$counterdate + days(counter$countervalue))
-      print(paste("Input value next", input$date))
+      print(paste("Input value next", counter$counterfinalday))
       # output$dateText  <- renderText({
       #   paste("Date is", as.character(input$date - days(counter$countervalue)), "and is a", weekdays(input$date - days(counter$countervalue)))
       # })
@@ -462,11 +531,12 @@ server <- function(input, output) {
               # Add the control widget
               addLayersControl(baseGroups = c("bg1","bg2", "bg3"), 
                                options = layersControlOptions(collapsed = FALSE)) %>%
-              # addCircles(lng = ~Lon, lat = ~Lat, weight = 1,
-              #            radius = ~sqrt(rides) * 30, 
-              #            popup = ~stationname
-              # )
-              addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
+              addCircles(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
+                         weight = 25,
+                         radius = 25
+                        # popup = ~stationname
+              )
+              # addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
             # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
       })
       
