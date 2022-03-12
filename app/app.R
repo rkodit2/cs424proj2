@@ -97,6 +97,10 @@ selectInput("page1", "Select the page", pages, selected = "Home")
                     choices = list("Barchart" = 1,
                                    "Table" = 2), selected = 1),
         selectInput("page1", h3("Select the page"), pages, selected = "Home"),
+        selectInput("providertile", h3("Map Theme"), 
+                    choices = list("OpenStreetMap" = "OpenStreetMap",
+                                   "Stamen.Toner" = "Stamen.Toner",
+                                   "Esri.NatGeoWorldMap"="Esri.NatGeoWorldMap"), selected = "OpenStreetMap"),
         actionButton("prev_button","Previous Day"),
         actionButton("next_button","Next Day"),
         dateInput('date',
@@ -104,11 +108,11 @@ selectInput("page1", "Select the page", pages, selected = "Home")
                   value = "2021-08-23"
         ),
         dateInput('date1',
-                  label = h3('Date input: for date 1'),
+                  label = h3('Date1 input'),
                   value = "2021-08-23"
         ),
         dateInput('date2',
-                  label = h3('Date input: for date 2'),
+                  label = h3('Date2 input'),
                   value = "2021-08-24"
         ),
 
@@ -345,7 +349,39 @@ server <- function(input, output) {
     
     observe({
       input$reset_button
-
+      
+      # output$mymap <- renderLeaflet({
+      #   sortedReactive <- justReactiveDateSelection()
+      #   sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
+      # 
+      #   x = str_split(sortedReactive$Location[1], ",", n = 2)
+      #   sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
+      #   sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
+      #   sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
+      # 
+      # 
+      #   nnpal <- colorNumeric(c("blue", "orange", "red"), domain = sortedReactive$rides)
+      # 
+      #       leaflet(sortedReactive) %>% addTiles() %>%
+      #         setView(lng = median(sortedReactive$Lon), lat = median(sortedReactive$Lat), zoom = 10) %>%
+      #         addProviderTiles("OpenStreetMap", group="bg1") %>%
+      #         addProviderTiles("Esri.NatGeoWorldMap", group="bg2") %>%
+      #         addProviderTiles("Stamen.Toner", group="bg3") %>%
+      # 
+      #         # Add the control widget
+      #         addLayersControl(baseGroups = c("bg1","bg2", "bg3"),
+      #                          options = layersControlOptions(collapsed = FALSE)) %>%
+      #         addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides),
+      #                   layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
+      #                    weight = 5,
+      #                    radius = 15
+      #                   # popup = ~stationname
+      #         )  %>%
+      #         addLegend(pal = nnpal, values = ~rides, opacity = 1)
+      #          # addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
+      #       # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
+      # })
+      
       output$mymap <- renderLeaflet({
         sortedReactive <- justReactiveDateSelection()
         sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
@@ -354,32 +390,31 @@ server <- function(input, output) {
         sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
         sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
         sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
-      
+        
         
         nnpal <- colorNumeric(c("blue", "orange", "red"), domain = sortedReactive$rides)
         
-            leaflet(sortedReactive) %>% addTiles() %>%
-              setView(lng = median(sortedReactive$Lon), lat = median(sortedReactive$Lat), zoom = 10) %>%
-              addProviderTiles("OpenStreetMap", group="bg1") %>%
-              addProviderTiles("Esri.NatGeoWorldMap", group="bg2") %>%
-              addProviderTiles("Stamen.Toner", group="bg3") %>%
-              
-              # Add the control widget
-              addLayersControl(baseGroups = c("bg1","bg2", "bg3"), 
-                               options = layersControlOptions(collapsed = FALSE)) %>%
-              addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides), 
-                        layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
-                         weight = 5,
-                         radius = 15
-                        # popup = ~stationname
-              )  %>%
-              addLegend(pal = nnpal, values = ~rides, opacity = 1)
-               # addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
-            # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
+        leaflet(sortedReactive) %>% addTiles() %>%
+          setView(lng = median(sortedReactive$Lon), lat = median(sortedReactive$Lat), zoom = 10) %>%
+          
+          addProviderTiles(input$providertile) %>%
+          
+          # Add the control widget
+          # addLayersControl(baseGroups = c("bg1","bg2", "bg3"),
+          #                  options = layersControlOptions(collapsed = FALSE)) %>%
+          addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides),
+                           layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
+                           weight = 5,
+                           radius = 15
+                           # popup = ~stationname
+          )  %>%
+          addLegend(pal = nnpal, values = ~rides, opacity = 1)
+        # addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
+        # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
       })
       
     })
-    
+
     
     justOneYearReactive1 <- reactive({
       #print(paste("Station name is:",stationClicked))
