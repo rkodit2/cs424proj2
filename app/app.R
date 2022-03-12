@@ -72,7 +72,7 @@ yearList = c(2001:2021)
 
 weekday_list <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
 
-pages <- c("Home","StationData","About Page")
+pages <- c("Home","About Page")
 
 stationClicked = "Austin-Forest Park"
 
@@ -159,19 +159,19 @@ data <- data.frame(specie,condition,value)
         selectInput("chart1", h3("Bar/Table Theme"), 
                     choices = list("Barchart" = 1,
                                    "Table" = 2), selected = 1),
-        selectInput("page1", "Select the page", pages, selected = "Home"),
+        selectInput("page1", h3("Select the page"), pages, selected = "Home"),
         actionButton("prev_button","Previous Day"),
         actionButton("next_button","Next Day"),
         dateInput('date',
-                  label = 'Date input: yyyy-mm-dd',
+                  label = h3('Date input: yyyy-mm-dd'),
                   value = "2021-08-23"
         ),
         dateInput('date1',
-                  label = 'Date input: for date 1',
+                  label = h3('Date input: for date 1'),
                   value = "2021-08-23"
         ),
         dateInput('date2',
-                  label = 'Date input: for date 2',
+                  label = h3('Date input: for date 2'),
                   value = "2021-08-24"
         ),
         # selectInput("whichcharttoshow", h3("Comparison"), 
@@ -519,10 +519,7 @@ server <- function(input, output) {
     
     observe({
       input$reset_button
-      
 
-      
-      
       output$mymap <- renderLeaflet({
         sortedReactive <- justReactiveDateSelection()
         sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
@@ -556,17 +553,27 @@ server <- function(input, output) {
         #   markerColor = getColor(df)
         # )
         
-        sortedReactive <- mutate(sortedReactive, colorColumn =
-                                    case_when(rides >= 0 & rides < 2000 ~ "green",
-                                              rides >= 2000 & rides < 4000 ~ "blue",
-                                              rides >= 4000 ~ "red")
-        )
+        # sortedReactive <- mutate(sortedReactive, colorColumn =
+        #                             case_when(rides >= 0 & rides < 2000 ~ "green",
+        #                                       rides >= 2000 & rides < 4000 ~ "blue",
+        #                                       rides >= 4000 ~ "red")
+        # )
         
         #print(sortedReactive)
         
         
         
-        pal <- colorFactor(c("green", "blue", "red"), domain = c("green", "blue", "red"))
+        nnpal <- colorNumeric(c("blue", "orange", "red"), domain = sortedReactive$rides)
+        
+        # pal <- colorFactor(c("green", "blue", "red"), domain = c("green", "blue", "red"))
+        # 
+        # qpal <- colorQuantile("RdYlBu", sortedReactive$rides, n = 5)
+        # 
+        # npal <- colorNumeric(
+        #   palette = "BuYlRd",
+        #   domain = sortedReactive$rides
+        # )
+        
         
         
         #newYears <-  justOneYearReactive()
@@ -580,11 +587,13 @@ server <- function(input, output) {
               # Add the control widget
               addLayersControl(baseGroups = c("bg1","bg2", "bg3"), 
                                options = layersControlOptions(collapsed = FALSE)) %>%
-              addCircleMarkers(~Lon, ~Lat, color=~pal(colorColumn), layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
+              addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides), 
+                        layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
                          weight = 5,
                          radius = 15
                         # popup = ~stationname
-              )
+              )  %>%
+              addLegend(pal = nnpal, values = ~rides, opacity = 1)
                # addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
             # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
       })
