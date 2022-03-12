@@ -46,6 +46,12 @@ newtable$day <- day(lubridateDate)
 newtable$year <- year(lubridateDate)
 newtable$weekday <- weekdays(newtable$lubridateDate)
 
+# newtable <- mutate(newtable, colorss = case_when(str_detect(weekday, "Monday") ~ "blue",
+#                                         str_detect(weekday, "Tuesday") ~ "red",
+#                                         TRUE ~ "a default")
+# )
+# print(newtable$colorss)
+
 newTableSortedRides <- newtable[order(newtable$rides),]  #sort by rides
 augustEntries <- subset(newtable, lubridateDate == "2021-08-23")
 sortedAug <- augustEntries[order(augustEntries$stationname),]
@@ -66,7 +72,7 @@ yearList = c(2001:2021)
 
 weekday_list <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
 
-pages <- c("Home","StationData","About Page")
+pages <- c("Home","About Page")
 
 stationClicked = "Austin-Forest Park"
 
@@ -153,19 +159,19 @@ data <- data.frame(specie,condition,value)
         selectInput("chart1", h3("Bar/Table Theme"), 
                     choices = list("Barchart" = 1,
                                    "Table" = 2), selected = 1),
-        selectInput("page1", "Select the page", pages, selected = "Home"),
+        selectInput("page1", h3("Select the page"), pages, selected = "Home"),
         actionButton("prev_button","Previous Day"),
         actionButton("next_button","Next Day"),
         dateInput('date',
-                  label = 'Date input: yyyy-mm-dd',
+                  label = h3('Date input: yyyy-mm-dd'),
                   value = "2021-08-23"
         ),
         dateInput('date1',
-                  label = 'Date input: for date 1',
+                  label = h3('Date input: for date 1'),
                   value = "2021-08-23"
         ),
         dateInput('date2',
-                  label = 'Date input: for date 2',
+                  label = h3('Date input: for date 2'),
                   value = "2021-08-24"
         ),
         # selectInput("whichcharttoshow", h3("Comparison"), 
@@ -513,13 +519,63 @@ server <- function(input, output) {
     
     observe({
       input$reset_button
+
       output$mymap <- renderLeaflet({
         sortedReactive <- justReactiveDateSelection()
         sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
+        
         x = str_split(sortedReactive$Location[1], ",", n = 2)
         sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
         sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
         sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
+        
+        # getColor <- function(sortedReactive) {
+        #   sapply(sortedReactive$rides, function(rides) {
+        #     if(rides <= 2000) {
+        #       sortedReactive$color = "green"
+        #     } else if(rides<= 4000) {
+        #       sortedReactive$color = "orange"
+        #     } else {
+        #       sortedReactive$color = "red"
+        #     }
+        #     print(sortedReactive$color)
+        #   })
+        # }
+        # 
+        # # pal <- colorNumeric(c("red", "green", "blue"), 1:10)
+        # 
+        # 
+        # 
+        # icons <- awesomeIcons(
+        #   icon = 'ios-close',
+        #   iconColor = 'black',
+        #   library = 'ion',
+        #   markerColor = getColor(df)
+        # )
+        
+        # sortedReactive <- mutate(sortedReactive, colorColumn =
+        #                             case_when(rides >= 0 & rides < 2000 ~ "green",
+        #                                       rides >= 2000 & rides < 4000 ~ "blue",
+        #                                       rides >= 4000 ~ "red")
+        # )
+        
+        #print(sortedReactive)
+        
+        
+        
+        nnpal <- colorNumeric(c("blue", "orange", "red"), domain = sortedReactive$rides)
+        
+        # pal <- colorFactor(c("green", "blue", "red"), domain = c("green", "blue", "red"))
+        # 
+        # qpal <- colorQuantile("RdYlBu", sortedReactive$rides, n = 5)
+        # 
+        # npal <- colorNumeric(
+        #   palette = "BuYlRd",
+        #   domain = sortedReactive$rides
+        # )
+        
+        
+        
         #newYears <-  justOneYearReactive()
             leaflet(sortedReactive) %>% addTiles() %>%
               # setView(lng = -87.6403, lat = 41.8787, zoom = 10) %>%
@@ -531,16 +587,23 @@ server <- function(input, output) {
               # Add the control widget
               addLayersControl(baseGroups = c("bg1","bg2", "bg3"), 
                                options = layersControlOptions(collapsed = FALSE)) %>%
-              addCircles(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
-                         weight = 25,
-                         radius = 25
+              addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides), 
+                        layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
+                         weight = 5,
+                         radius = 15
                         # popup = ~stationname
-              )
-              # addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
+              )  %>%
+              addLegend(pal = nnpal, values = ~rides, opacity = 1)
+               # addMarkers(~Lon, ~Lat, layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname))
             # ggplot(df1, aes(x=Year, y=Entries))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Entries", x="Year", title="Entries in UIC-Halsted from 2001-2021")+scale_y_continuous(labels=comma)
       })
       
     })
+    
+    
+    
+    
+    
     
     
     justOneYearReactive1 <- reactive({
