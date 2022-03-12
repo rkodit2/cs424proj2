@@ -90,16 +90,16 @@ selectInput("page1", "Select the page", pages, selected = "Home")
           menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
 
         actionButton("reset_button", "Reset Map"),
-        selectInput("alphabetmaxmin", ("Order of Display"), 
+        selectInput("alphabetmaxmin", h3("Order of Display"), 
                     choices = list("Alphabetical" = 1,
                                    "Min-Max" = 2), selected = 1),
-        selectInput("chart1", ("Bar/Table Theme"), 
+        selectInput("chart1", h3("Bar/Table Theme"), 
                     choices = list("Barchart" = 1,
                                    "Table" = 2), selected = 1),
         hr(),
-        selectInput("page1", ("Select the page"), pages, selected = "Home"),
+        selectInput("page1", h3("Select the page"), pages, selected = "Home"),
         hr(),
-        selectInput("providertile", ("Map Theme"), 
+        selectInput("providertile", h3("Map Theme"), 
                     choices = list("OpenStreetMap" = "OpenStreetMap",
                                    "Stamen.Toner" = "Stamen.Toner",
                                    "Esri.NatGeoWorldMap"="Esri.NatGeoWorldMap"), selected = "OpenStreetMap"),
@@ -110,6 +110,7 @@ selectInput("page1", "Select the page", pages, selected = "Home")
                   value = "2021-08-23"
         ),
         hr(),
+        htmlOutput("textsidebar"),
         dateInput('date1',
                   label = ('Date1 for comparison'),
                   value = "2021-08-23"
@@ -593,7 +594,7 @@ server <- function(input, output) {
       
       
       stationClicked = click$id
-      print(stationClicked)
+      # print(stationClicked)
       text <-
         paste("Lattitude ",
               click$lat,
@@ -777,7 +778,13 @@ server <- function(input, output) {
     output$dateText  <- renderText({
       paste("Date is", as.character(counter$counterdate), "and is a", weekdays(counter$counterdate), " and default station is UIC-Halsted")
     })
-   
+    
+    output$textsidebar <- renderUI({
+      HTML(paste(
+        h3(HTML('&nbsp;'),HTML('&nbsp;'),"To Compare")
+      )
+      )
+    })
     
 }
 
