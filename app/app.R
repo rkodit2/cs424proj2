@@ -562,28 +562,31 @@ server <- function(input, output) {
     
     observeEvent(input$reset_button, {
       
-      # react_map(base_map2()) 
+      # sortedReactive <- justReactiveDateSelection()
+      # sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
+      # 
+      # x = str_split(sortedReactive$Location[1], ",", n = 2)
+      # sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
+      # sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
+      # sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
+      # 
+      # nnpal <- colorNumeric(c("blue", "orange", "red"), domain = sortedReactive$rides)
+      # leafletProxy("mymap",  data = sortedReactive) %>%
+      #   clearMarkers() %>%
+      #   clearControls() %>%
+      #   setView(lng = median(sortedReactive$Lon), lat = median(sortedReactive$Lat), zoom = 10) %>%
+      #   addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides),
+      #                    layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
+      #                    weight = 5,
+      #                    radius = 15
+      #                    # popup = ~stationname
+      #   ) %>%
+      #   addLegend(pal = nnpal, values = ~rides, opacity = 1)
       
-      sortedReactive <- justReactiveDateSelection()
-      sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
-      
-      x = str_split(sortedReactive$Location[1], ",", n = 2)
-      sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
-      sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
-      sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
-      
-      nnpal <- colorNumeric(c("blue", "orange", "red"), domain = sortedReactive$rides)
-      leafletProxy("mymap",  data = sortedReactive) %>%
-        clearMarkers() %>%
-        clearControls() %>%
-        setView(lng = median(sortedReactive$Lon), lat = median(sortedReactive$Lat), zoom = 10) %>%
-        addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides),
-                         layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
-                         weight = 5,
-                         radius = 15
-                         # popup = ~stationname
-        ) %>%
-        addLegend(pal = nnpal, values = ~rides, opacity = 1)
+      leafletProxy("mymap") %>%
+        # clearMarkers() %>%
+        # clearControls() %>%
+        setView(lng = median(sortedAug$Lon), lat = median(sortedAug$Lat), zoom = 10)
       
     })
     
