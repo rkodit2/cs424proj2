@@ -79,10 +79,6 @@ stationClicked = "Austin-Forest Park"
 
 selectInput("page1", "Select the page", pages, selected = "Home")
 
-nameOfPlace1 = "UIC-Halsted"
-nameOfPlace2 = "UIC-Halsted"
-
-
 
 
 #print(gsub('[(]','', sortedAug$First))
@@ -308,7 +304,8 @@ server <- function(input, output) {
   
 
   justReactiveDateSelection <- reactive({
-    defaultDate = input$date
+    # defaultDate = input$date
+    defaultDate = counter$counterdate
     # print(nameOfPlace)
      subset(newtable, newtable$lubridateDate == defaultDate)
   })
@@ -319,11 +316,11 @@ server <- function(input, output) {
   #   subset(newTableSortedRides, newTableSortedRides$lubridateDate == defaultDate)
   # })  
   
-  justReactivePrevDay <- reactive({
-    defaultDate = input$date - days(counter$countervalue)
-    # print(nameOfPlace)
-    subset(newtable, newtable$lubridateDate == defaultDate)
-  })
+  # justReactivePrevDay <- reactive({
+  #   defaultDate = input$date - days(counter$countervalue)
+  #   # print(nameOfPlace)
+  #   subset(newtable, newtable$lubridateDate == defaultDate)
+  # })
   
   # observe({
   #   input$enter_button
@@ -351,7 +348,38 @@ server <- function(input, output) {
       })
       
       output$tbBarchart <- renderDT({
+        
+        bar1 <- subset(newtable, newtable$lubridateDate == input$date1)
+        bar2 <- subset(newtable, newtable$lubridateDate == input$date2)
+        s <- merge(bar1,bar2, by.x  = "stationname", by.y="stationname") 
+        
+        df4 <- data.frame(
+          stationName= s$stationname,
+          date1Rides = s$rides.x,
+          date2Rides = s$rides.y,
+          difference = s$rides.x-s$rides.y
+        )
+        #print(dfbar)
+        # dfbar <- dfbar[order(dfbar$stationname),]
+        datatable(df4,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
+      })
+      
+    })
+  
+  observeEvent(
+    input$reset_bar,{
+      output$distPlot <- renderPlot({
+        bar1 <- subset(newtable, newtable$lubridateDate == counter$counterdate)
+        if(input$alphabetmaxmin == 1) {
+          ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterdate))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        } else{
+          ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterdate))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        }
+      })
+      
+      output$tbBarchart = renderDT({
         bar1 <- justReactiveDateSelection()
+
         dfbar <- data.frame(
           stationname = bar1$stationname,
           rides = bar1$rides
@@ -364,33 +392,15 @@ server <- function(input, output) {
     })
   
   observeEvent(
-    input$reset_bar,{
-      output$distPlot <- renderPlot({
-        bar1 <- subset(newtable, newtable$lubridateDate == input$date)
-        if(input$alphabetmaxmin == 1) {
-          
-          # bar1 <- bar1[order(bar1$stationname),]
-          ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
-        } else{
-          # bar1 <- justReactiveDateSelectionSortedOrder()
-          # bar1 <- bar1[order(bar1$rides),]
-          # print(bar1)
-          ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
-        }
-      })
-      
-    })
-  
-  observeEvent(
     input$prev_button,{
       if(counter$counterprevbuttonpressed == 0) {
         counter$countervalue <- 1
         # counter$counterdate <- input$date
-        counter$counterfinalday <- counter$counterdate - days(counter$countervalue)
+        counter$counterdate <- counter$counterdate - days(counter$countervalue)
       } else {
-      counter$countervalue <- counter$countervalue + 1
+      counter$countervalue <- 1
       # counter$counterdate <- input$date
-      counter$counterfinalday <- counter$counterdate - days(counter$countervalue)
+      counter$counterdate <- counter$counterdate - days(counter$countervalue)
       }
       # counter$counterdate <- input$date
       counter$counterprevbuttonpressed = 1
@@ -410,10 +420,10 @@ server <- function(input, output) {
       if(counter$counterprevbuttonpressed == 1) {
         counter$countervalue <- 1
         # counter$counterdate <- input$date
-        counter$counterfinalday <- counter$counterdate + days(counter$countervalue)
+        counter$counterdate<- counter$counterdate + days(counter$countervalue)
       } else {
-      counter$countervalue <- counter$countervalue + 1
-      counter$counterfinalday <- counter$counterdate + days(counter$countervalue)
+      counter$countervalue <- 1
+      counter$counterdate <- counter$counterdate + days(counter$countervalue)
       # counter$counterdate <- input$date
       }
       counter$counterprevbuttonpressed == 0
@@ -444,16 +454,16 @@ server <- function(input, output) {
   
 
     output$distPlot <- renderPlot({
-      bar1 <- subset(newtable, newtable$lubridateDate == counter$counterfinalday)
+      bar1 <- subset(newtable, newtable$lubridateDate == counter$counterdate)
       if(input$alphabetmaxmin == 1) {
         
         # bar1 <- bar1[order(bar1$stationname),]
-        ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        ggplot(bar1, aes(x=stationname, y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterdate))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
       } else{
         # bar1 <- justReactiveDateSelectionSortedOrder()
         # bar1 <- bar1[order(bar1$rides),]
         # print(bar1)
-        ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterfinalday))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
+        ggplot(bar1, aes(x=reorder(stationname, rides), y=rides))+geom_bar(stat="identity", fill="#1f78b4")+labs(y = "Total Rides", x="Stations", title=paste("Entries in CTA for ", counter$counterdate))+scale_y_continuous(labels=comma)+theme(axis.text.x = element_text(angle = 90))
       }
         # generate bins based on input$bins from ui.R
       
@@ -608,7 +618,7 @@ server <- function(input, output) {
     
     justOneYearReactive1 <- reactive({
       #print(paste("Station name is:",stationClicked))
-      subset(newtable, newtable$year == year(input$date) & newtable$stationname == "UIC-Halsted")
+      subset(newtable, newtable$year == year(counter$counterdate) & newtable$stationname == "UIC-Halsted")
     })
     
     
@@ -691,7 +701,7 @@ server <- function(input, output) {
         #print(df1[m,2])
         m3=m3+1
       }
-      datatable(df3,options  = list(lengthMenu = c(13,13)))
+      datatable(df3,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
       #df3 options  = list(lengthMenu = c(6,6))
     })
     
@@ -736,7 +746,7 @@ server <- function(input, output) {
         m4=m4+1
       }
       #df4 
-      datatable(df4,options  = list(lengthMenu = c(13,13)))
+      datatable(df4,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
       
     })
     
@@ -756,7 +766,7 @@ server <- function(input, output) {
         Day = ny1$lubridateDate,
         Entries = ny1$rides
       )
-      datatable(df4,options  = list(lengthMenu = c(13,13)))
+      datatable(df4,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
       
       
     })
@@ -771,7 +781,8 @@ server <- function(input, output) {
     
     output$tb1 = renderDT({
       ny1 <- justOneYearReactive2()
-      datatable(ny1,options  = list(lengthMenu = c(13,13)))
+      
+      datatable(ny1,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
       # ny1,  options  = list(lengthMenu = c(7,7))
     })
     
@@ -794,7 +805,7 @@ server <- function(input, output) {
       
       justOneYearReactive1 <- reactive({
         #print(paste("Station name is:",stationClicked))
-        subset(newtable, newtable$year == year(input$date) & newtable$stationname == click$id)
+        subset(newtable, newtable$year == year(counter$counterdate) & newtable$stationname == click$id)
       })
       
       
@@ -877,7 +888,7 @@ server <- function(input, output) {
           #print(df1[m,2])
           m3=m3+1
         }
-        datatable(df3,options  = list(lengthMenu = c(13,13)))
+        datatable(df3,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
         #df3 options  = list(lengthMenu = c(6,6))
       })
       
@@ -922,7 +933,7 @@ server <- function(input, output) {
           m4=m4+1
         }
         #df4 
-        datatable(df4,options  = list(lengthMenu = c(13,13)))
+        datatable(df4,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
         
       })
       
@@ -942,7 +953,7 @@ server <- function(input, output) {
           Day = ny1$lubridateDate,
           Entries = ny1$rides
         )
-        datatable(df4,options  = list(lengthMenu = c(13,13)))
+        datatable(df4,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
         
         
       })
@@ -958,12 +969,12 @@ server <- function(input, output) {
       
       output$tb1 = renderDT({
         ny1 <- justOneYearReactive2()
-        datatable(ny1,options  = list(lengthMenu = c(13,13)))
+        datatable(ny1,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
         # ny1,  options  = list(lengthMenu = c(7,7))
       })
       
       output$dateText  <- renderText({
-        paste("Date is", as.character(counter$counterfinalday), "and is a", weekdays(counter$counterfinalday), "and station is" , click$id)
+        paste("Date is", as.character(counter$counterdate), "and is a", weekdays(counter$counterdate), "and station is" , click$id)
       })
       
       # leafletProxy(mapId = "mymap") %>%
@@ -976,7 +987,7 @@ server <- function(input, output) {
     
     
     output$dateText  <- renderText({
-      paste("Date is", as.character(counter$counterfinalday), "and is a", weekdays(counter$counterfinalday), " and default station is UIC-Halsted")
+      paste("Date is", as.character(counter$counterdate), "and is a", weekdays(counter$counterdate), " and default station is UIC-Halsted")
     })
     
     
