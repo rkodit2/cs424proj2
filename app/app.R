@@ -90,34 +90,37 @@ selectInput("page1", "Select the page", pages, selected = "Home")
           menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
 
         actionButton("reset_button", "Reset Map"),
-        selectInput("alphabetmaxmin", h3("Order of Display"), 
+        selectInput("alphabetmaxmin", ("Order of Display"), 
                     choices = list("Alphabetical" = 1,
                                    "Min-Max" = 2), selected = 1),
-        selectInput("chart1", h3("Bar/Table Theme"), 
+        selectInput("chart1", ("Bar/Table Theme"), 
                     choices = list("Barchart" = 1,
                                    "Table" = 2), selected = 1),
-        selectInput("page1", h3("Select the page"), pages, selected = "Home"),
-        selectInput("providertile", h3("Map Theme"), 
+        hr(),
+        selectInput("page1", ("Select the page"), pages, selected = "Home"),
+        hr(),
+        selectInput("providertile", ("Map Theme"), 
                     choices = list("OpenStreetMap" = "OpenStreetMap",
                                    "Stamen.Toner" = "Stamen.Toner",
                                    "Esri.NatGeoWorldMap"="Esri.NatGeoWorldMap"), selected = "OpenStreetMap"),
         actionButton("prev_button","Previous Day"),
         actionButton("next_button","Next Day"),
         dateInput('date',
-                  label = h3('Date input: yyyy-mm-dd'),
+                  label = ('Date input: yyyy-mm-dd'),
                   value = "2021-08-23"
         ),
+        hr(),
         dateInput('date1',
-                  label = h3('Date1 input'),
+                  label = ('Date1 for comparison'),
                   value = "2021-08-23"
         ),
         dateInput('date2',
-                  label = h3('Date2 input'),
+                  label = ('Date2 for comparison'),
                   value = "2021-08-24"
         ),
 
-        actionButton("enter_button", "Enter"),
-        actionButton("reset_bar", "Reset Bar")
+        actionButton("enter_button", "Compare Dates"),
+        actionButton("reset_bar", "Stop Compare")
         
       ),
       dashboardBody(
