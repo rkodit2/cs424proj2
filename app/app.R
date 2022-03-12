@@ -224,7 +224,7 @@ server <- function(input, output) {
   justReactiveDateSelection <- reactive({
     # defaultDate = input$date
     defaultDate = counter$counterdate
-    # print(nameOfPlace)
+    #print(defaultDate)
      subset(newtable, newtable$lubridateDate == defaultDate)
   })
 
@@ -257,6 +257,36 @@ server <- function(input, output) {
         datatable(df4,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
       })
       
+      
+      bar1 <- subset(newtable, newtable$lubridateDate == input$date1)
+      bar2 <- subset(newtable, newtable$lubridateDate == input$date2)
+      s <- merge(bar1,bar2, by.x  = "stationname", by.y="stationname") 
+      
+      df4 <- data.frame(
+        stationName= s$stationname,
+        date1Rides = s$rides.x,
+        date2Rides = s$rides.y,
+        difference = s$rides.x-s$rides.y,
+        Location = s$Location.x
+      )
+      
+      x = str_split(df4$Location[1], ",", n = 2)
+      df4[c('First', 'Last')] <- str_split_fixed(df4$Location, ', ', 2)
+      df4$Lat <- as.numeric(gsub('[(]','', df4$First))
+      df4$Lon <- as.numeric(gsub('[)]','', df4$Last))
+      
+      nnpal <- colorNumeric(c("blue", "orange", "red"), domain = df4$difference)
+      leafletProxy("mymap",  data = df4) %>%
+        clearMarkers() %>%
+        clearControls() %>%
+        addCircleMarkers(~Lon, ~Lat, color=~nnpal(difference),
+                         layerId=~as.character(stationName), popup = ~as.character(paste(stationName, " difference: ", difference)),label = ~as.character(stationName),
+                         weight = 5,
+                         radius = 15
+                         # popup = ~stationname
+        ) %>%
+        addLegend(pal = nnpal, values = ~difference, opacity = 1)
+      
     })
   
   observeEvent(
@@ -281,6 +311,26 @@ server <- function(input, output) {
         dfbar <- dfbar[order(dfbar$stationname),]
         datatable(dfbar,options  = list(lengthMenu = c(13,13)), rownames= FALSE)
       })
+      
+      sortedReactive <- justReactiveDateSelection()
+      sortedReactive <- sortedReactive[order(sortedReactive$stationname),]
+      
+      x = str_split(sortedReactive$Location[1], ",", n = 2)
+      sortedReactive[c('First', 'Last')] <- str_split_fixed(sortedReactive$Location, ', ', 2)
+      sortedReactive$Lat <- as.numeric(gsub('[(]','', sortedReactive$First))
+      sortedReactive$Lon <- as.numeric(gsub('[)]','', sortedReactive$Last))
+      
+      nnpal <- colorNumeric(c("blue", "orange", "red"), domain = sortedReactive$rides)
+      leafletProxy("mymap",  data = sortedReactive) %>%
+        clearMarkers() %>%
+        clearControls() %>%
+        addCircleMarkers(~Lon, ~Lat, color=~nnpal(rides),
+                         layerId=~as.character(stationname), popup = ~as.character(paste(stationname, ": ", rides)),label = ~as.character(stationname),
+                         weight = 5,
+                         radius = 15
+                         # popup = ~stationname
+        ) %>%
+        addLegend(pal = nnpal, values = ~rides, opacity = 1)
       
     })
   
