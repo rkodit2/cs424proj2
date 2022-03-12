@@ -198,9 +198,18 @@ selectInput("page1", "Select the page", pages, selected = "Home")
       ),
       conditionalPanel(
         condition = "input.page1 == 'About Page'",
-        column(12,
-               h3("The data is from City of Chicago https://www.evl.uic.edu/aej/424/22Sproject1.html#:~:text=https%3A//data.cityofchicago.org/Transportation/CTA%2DRidership%2DL%2DStation%2DEntries%2DDaily%2DTotals/5neh%2D572f
-                and the app is made by Soel Mullenkuzhiyil Sunny last updated on 02/12/2022 and was made to compare the CTA entries between O'hare Airport, UIC-Halsted and Dempster stops.")
+        column(8,
+               fluidRow(
+               h3("The data is from City of Chicago https://data.cityofchicago.org/Transportation/CTA-Ridership-L-Station-Entries-Daily-Totals/5neh-572f
+                and https://data.cityofchicago.org/Transportation/CTA-System-Information-List-of-L-Stops/8pix-ypme
+                and the web app is made by Soel Mullenkuzhiyil Sunny and Rajashree Kodithyala last updated on 03/12/2022 and was made to compare the CTA entries between different stations from 2001-2021")
+               ),
+               fluidRow(h3(
+                 "This application allows you to visualize the number of rides on a given date for each CTA station in Chicago. It shows a bar chart and table for every station for the specified date. There are two buttons called previous day and next to be able to change the data easily. 
+                 It also shows a map with markers to point out the locations of every station. If the marker is clicked, it will 
+                 show the station name and the number of rides for that specific date. It was also display a few more bar charts to the right to help understand the data better. You can choose to see the bar charts as a table format as well. The map allows you to change between 
+                 three different themes and these options are on the map itself. The map can be resetted back to the original location by using the reset button. In addition, the application lets you pick two dates to compare and the bar chart and its table should reflect these changes using a side by side bar chart."
+               ))
         )
       )
       ),
